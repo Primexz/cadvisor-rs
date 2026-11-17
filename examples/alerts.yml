@@ -1,0 +1,61 @@
+# Add this file to Prometheus rule_files; assumes the example job name below
+# and Docker metadata enabled. In Grafana, import the same expressions as alerts.
+groups:
+  - name: cadvisor-rs
+    rules:
+      - alert: ContainerHealthcheckFailing
+        expr: container_health_status{job="cadvisor-rs",status="unhealthy"} == 1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Container {{ $labels.name }} is unhealthy'
+          description: 'The configured Docker HEALTHCHECK has remained unhealthy for one minute.'
+      - alert: ContainerMemoryPressure
+        expr: |
+          container_memory_working_set_bytes{job="cadvisor-rs"}
+            / (container_spec_memory_limit_bytes{job="cadvisor-rs"} > 0) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Container {{ $labels.name }} is above 90% of its reported memory limit'
+      - alert: DockerMetadataUnavailable
+        expr: cadvisor_rs_docker_up{job="cadvisor-rs"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Docker metadata unavailable on {{ $labels.instance }}'
+          description: 'Health/lifecycle gauges are unavailable; check Docker and socket permissions.'
+      - alert: ContainerRestartingFrequently
+        expr: increase(container_restarts_total{job="cadvisor-rs"}[10m]) > 3
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Container {{ $labels.name }} restarted repeatedly'
+          description: 'Docker reports more than three automatic restarts in ten minutes.'
+      - alert: ContainerOOMKills
+        expr: increase(container_oom_events_total{job="cadvisor-rs"}[10m]) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: 'OOM kill in container {{ $labels.name }}'
+      - alert: ContainerIOStalled
+        expr: rate(container_pressure_io_stalled_seconds_total{job="cadvisor-rs"}[5m]) > 0.2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Container {{ $labels.name }} spends over 20% of wall time fully stalled on I/O'
+      - alert: DockerEngineInfoUnavailable
+        expr: docker_engine_up{job="cadvisor-rs"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Docker daemon info unavailable on {{ $labels.instance }}'
+# For stopped-service alerts, select only persistent services (e.g. an allowlisted
+# Compose label) before using container_running == 0; completed jobs also remain
+# in inventory by default.

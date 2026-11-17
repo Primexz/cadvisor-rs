@@ -1,0 +1,38 @@
+name: Set up project Rust
+description: Read the pinned toolchain or MSRV from project files and install it
+inputs:
+  msrv:
+    description: Install the minimum Rust version declared in Cargo.toml
+    default: "false"
+  components:
+    description: Additional Rust components
+    default: rustfmt,clippy
+  targets:
+    description: Additional Rust targets
+    default: ""
+runs:
+  using: composite
+  steps:
+    - id: version
+      shell: bash
+      env:
+        USE_MSRV: ${{ inputs.msrv }}
+      run: |
+        python3 - <<'PY' >> "$GITHUB_OUTPUT"
+        import os, tomllib
+        from pathlib import Path
+        if os.environ['USE_MSRV'] == 'true':
+            version = tomllib.loads(Path('Cargo.toml').read_text())['package']['rust-version']
+        else:
+            version = tomllib.loads(Path('rust-toolchain.toml').read_text())['toolchain']['channel']
+        print(f'version={version}')
+        PY
+    - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
+      with:
+        toolchain: ${{ steps.version.outputs.version }}
+        components: ${{ inputs.components }}
+        targets: ${{ inputs.targets }}
+    - shell: bash
+      env:
+        SELECTED_RUST_TOOLCHAIN: ${{ steps.version.outputs.version }}
+      run: echo "RUSTUP_TOOLCHAIN=$SELECTED_RUST_TOOLCHAIN" >> "$GITHUB_ENV"

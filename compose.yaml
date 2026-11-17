@@ -1,0 +1,22 @@
+services:
+  cadvisor-rs:
+    build: .
+    image: cadvisor-rs:local
+    restart: unless-stopped
+    cgroup: host
+    pid: host
+    read_only: true
+    cap_drop: [ALL]
+    # Needed for full FD/task and /proc/<pid>/root filesystem visibility.
+    cap_add: [SYS_PTRACE]
+    security_opt: [no-new-privileges:true]
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - /sys/fs/cgroup:/host/sys/fs/cgroup:ro
+      - /proc:/host/proc:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command:
+      - --cgroup-root=/host/sys/fs/cgroup
+      - --proc-root=/host/proc
+      - --containers-only
