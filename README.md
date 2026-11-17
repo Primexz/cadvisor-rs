@@ -30,24 +30,35 @@ labels, health and lifecycle information.
 
 ## Quick start
 
-Requires a Linux Docker host and Docker Compose. From the repository checkout:
+Requires a Linux Docker host. Save this as `compose.yaml`:
 
-```sh
-docker compose up -d --build
-curl http://localhost:8080/metrics
-curl http://localhost:8080/readyz
+```yaml
+services:
+  cadvisor-rs:
+    image: ghcr.io/primexz/cadvisor-rs:edge
+    cgroup: host
+    pid: host
+    read_only: true
+    cap_drop: [ALL]
+    # Needed for full FD/task and /proc/<pid>/root filesystem visibility.
+    cap_add: [SYS_PTRACE]
+    security_opt: [no-new-privileges:true]
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - /sys/fs/cgroup:/host/sys/fs/cgroup:ro
+      - /proc:/host/proc:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command:
+      - --cgroup-root=/host/sys/fs/cgroup
+      - --proc-root=/host/proc
+      - --containers-only
+    restart: always
 ```
 
-[compose.yaml](compose.yaml) binds the exporter to `127.0.0.1:8080`. It uses the
-host cgroup/PID namespaces, read-only cgroup and procfs mounts, and `SYS_PTRACE`
-for process and filesystem visibility. The Docker socket supplies metadata;
-read-only mounting does not restrict which Docker API operations the socket permits.
-
-To run the binary directly on Linux:
-
 ```sh
-cargo build --release --locked
-sudo ./target/release/cadvisor-rs --listen 127.0.0.1:8080 --containers-only
+docker compose up -d
+curl http://localhost:8080/metrics
 ```
 
 ## Prometheus

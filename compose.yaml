@@ -1,7 +1,6 @@
 services:
   cadvisor-rs:
-    build: .
-    image: cadvisor-rs:local
+    image: ghcr.io/primexz/cadvisor-rs:edge
     restart: unless-stopped
     cgroup: host
     pid: host
