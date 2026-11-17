@@ -18,6 +18,11 @@
       "groupName": "Rust dependencies"
     },
     { "matchManagers": ["github-actions"], "groupName": "GitHub Actions" },
-    { "matchUpdateTypes": ["major"], "dependencyDashboardApproval": true }
+    { "matchUpdateTypes": ["major"], "dependencyDashboardApproval": true },
+    {
+      "matchManagers": ["docker-compose"],
+      "matchFileNames": ["compose.yaml"],
+      "pinDigests": false
+    }
   ]
 }
