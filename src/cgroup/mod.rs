@@ -1,7 +1,10 @@
 //! Safe readers for the Linux cgroup v1 and v2 filesystem interfaces.
 
+mod blkio;
 mod discovery;
+mod hugetlb;
 mod memory;
+mod numa;
 mod parse;
 mod v1;
 mod v2;
@@ -14,6 +17,7 @@ use std::{
 use crate::model::Container;
 
 pub use discovery::{Group, discover};
+pub use numa::{parse_numa_v1, parse_numa_v2};
 pub use parse::{container_id, cpuset_count, key_values, limit, parse_io_v2, parse_pressure};
 
 /// Detected Linux cgroup hierarchy.

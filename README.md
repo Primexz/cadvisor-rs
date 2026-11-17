@@ -18,15 +18,20 @@
 
 ## Features
 
-- 156 metric families for CPU, memory, disk I/O, network, processes and pressure stalls.
+- 173 metric families for CPU, memory, disk I/O, network, processes and pressure stalls.
 - Docker health checks, restarts, exit codes, uptime and stopped-container inventory.
 - Filesystem capacity, inodes and optional writable-layer usage.
+- HugeTLB usage and limits, NUMA residency, advanced TCP statistics and detailed block I/O.
 - cAdvisor-compatible Prometheus resource metrics and a JSON snapshot API.
-- A Grafana dashboard with 30 panels and host/container filters.
+- A Grafana dashboard with 42 panels and host/container filters.
 - Direct cgroup collection with cached responses shared across scrapers.
 
 Supports Linux amd64 and arm64 with cgroup v1 or v2. Docker adds names, images,
 labels, health and lifecycle information.
+
+Optional metrics depend on kernel support: block scheduler timings, merges and
+queue depth use cgroup v1; IOCost counters use cgroup v2. Unsupported measurements
+are omitted.
 
 ## Quick start
 
@@ -83,7 +88,8 @@ Open **Dashboards → New → Import** and upload
 source, job, hosts and containers at the top of the dashboard.
 
 The dashboard covers resource usage, health, restarts, connections, filesystems
-and exporter diagnostics.
+and exporter diagnostics. Expand the optional sections for NUMA, huge pages, TCP
+diagnostics and detailed block I/O; availability depends on the host kernel.
 
 ## Configuration
 

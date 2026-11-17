@@ -23,6 +23,11 @@ proptest! {
         let _ = procfs::parse_tcp(&text);
         let _ = procfs::parse_udp(&text);
         let _ = procfs::parse_ulimits(&text);
+        let _ = cgroup::parse_numa_v1(&text);
+        let _ = cgroup::parse_numa_v2(&text, 4096);
+        let _ = cgroup::parse_numa_v2(&text, 0);
+        let _ = procfs::parse_advanced_tcp(&text, "Tcp");
+        let _ = procfs::parse_advanced_tcp(&text, "TcpExt");
     }
 
     #[test]

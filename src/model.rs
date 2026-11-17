@@ -150,6 +150,26 @@ pub struct Io {
     pub discard_bytes: Option<u64>,
     /// Completed discard operations.
     pub discards: Option<u64>,
+    /// Cumulative read request service time in seconds, when reported by v1 blkio.
+    pub read_seconds: Option<f64>,
+    /// Cumulative write request service time in seconds, when reported by v1 blkio.
+    pub write_seconds: Option<f64>,
+    /// Cumulative service time for all I/O operations in seconds.
+    pub service_seconds: Option<f64>,
+    /// Read requests merged by the block scheduler.
+    pub reads_merged: Option<u64>,
+    /// Write requests merged by the block scheduler.
+    pub writes_merged: Option<u64>,
+    /// Current queued I/O requests, using the controller's Total row.
+    pub io_current: Option<u64>,
+    /// Cumulative v2 IOCost usage in seconds.
+    pub cost_usage_seconds: Option<f64>,
+    /// Cumulative v2 IOCost wait time in seconds.
+    pub cost_wait_seconds: Option<f64>,
+    /// Cumulative v2 IOCost time in debt in seconds.
+    pub cost_indebt_seconds: Option<f64>,
+    /// Cumulative v2 IOCost delay time in seconds.
+    pub cost_indelay_seconds: Option<f64>,
 }
 
 /// Per-interface network counters from a process's network namespace.
@@ -213,6 +233,8 @@ pub struct Container {
     pub cpu: Cpu,
     /// Memory measurements.
     pub memory: Memory,
+    /// HugeTLB fault accounting keyed by the kernel hugepage size, such as 2MB.
+    pub hugetlb: BTreeMap<String, HugeTlb>,
     /// Current process/thread count reported by the pids controller.
     pub pids: Option<u64>,
     /// Process/thread limit; absent if unlimited.
@@ -245,6 +267,7 @@ impl Container {
             || self.memory.usage.is_some()
             || self.pids.is_some()
             || !self.io.is_empty()
+            || self.hugetlb.values().any(|value| value.usage.is_some())
     }
 }
 

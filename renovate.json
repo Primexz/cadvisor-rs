@@ -1,16 +1,23 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended", ":semanticCommits", "helpers:pinGitHubActionDigests", "docker:pinDigests"],
-  "dependencyDashboard": {"enabled": true},
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    "helpers:pinGitHubActionDigests",
+    "docker:pinDigests"
+  ],
+  "dependencyDashboard": { "enabled": true },
   "schedule": ["before 6am on monday"],
   "timezone": "Europe/Berlin",
   "prConcurrentLimit": 5,
   "branchPrefix": "chore/renovate-",
-  "commitBody": "Keep dependencies current to receive maintenance and security fixes.\n\nUpdate {{depName}} and the associated lockfile or pinned reference.",
-  "prBodyTemplate": "### Problem\n\nDependency updates are available.\n\n### Cause\n\nUpstream dependencies have published newer versions or digests.\n\n### Fix\n\n{{{table}}}\n\n{{{notes}}}\n\n{{{changelogs}}}",
   "packageRules": [
-    {"matchManagers": ["cargo"], "matchUpdateTypes": ["minor", "patch"], "groupName": "Rust dependencies"},
-    {"matchManagers": ["github-actions"], "groupName": "GitHub Actions"},
-    {"matchUpdateTypes": ["major"], "dependencyDashboardApproval": true}
+    {
+      "matchManagers": ["cargo"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Rust dependencies"
+    },
+    { "matchManagers": ["github-actions"], "groupName": "GitHub Actions" },
+    { "matchUpdateTypes": ["major"], "dependencyDashboardApproval": true }
   ]
 }

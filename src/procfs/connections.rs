@@ -95,5 +95,19 @@ pub fn read_connections(root: &Path, pid: Option<u32>, host: bool) -> Connection
             Err(_) => result.errors += 1,
         }
     }
+    for (name, protocol) in [("snmp", "Tcp"), ("netstat", "TcpExt")] {
+        match text(&path.join(name)) {
+            Ok(text) => match super::parse_advanced_tcp(&text, protocol) {
+                Some(stats) => {
+                    result.advanced.values.extend(stats.values);
+                    result.advanced.max_connections =
+                        stats.max_connections.or(result.advanced.max_connections);
+                }
+                None => result.errors += 1,
+            },
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {}
+            Err(_) => result.errors += 1,
+        }
+    }
     result
 }

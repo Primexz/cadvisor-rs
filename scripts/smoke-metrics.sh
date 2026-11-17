@@ -43,6 +43,10 @@ assert running["pids_limit"]==64
 assert running["processes"]["count"]>=1
 assert running["processes"]["files"]>=3, running["processes"]
 assert running["processes"]["errors"]==0,running["processes"]
+assert running["connections"]["errors"]==0,running["connections"]
+assert "retranssegs" in running["connections"]["advanced"]["values"]
+assert "listendrops" in running["connections"]["advanced"]["values"]
+assert running["connections"]["advanced"]["max_connections"] is not None
 assert running["metadata"]["inspect_up"]
 assert running["metadata"]["details"]["started"]>0
 assert running["metadata"]["details"]["restarts"]==0
@@ -54,7 +58,7 @@ assert stopped["metadata"]["details"]["running"] is False
 assert stopped["metadata"]["details"]["exit_code"]==7
 assert stopped["cpu"]["usage"] is None and stopped["memory"]["usage"] is None
 assert sample["docker_engine"]["containers"]["stopped"]>=1
-print("Limits, process/FDs, volume capacity, writable size and stopped inventory verified")
+print("Limits, process/FDs, TCP statistics, volume capacity, writable size and stopped inventory verified")
 ' "$running" "$stopped"
 curl -fsS "$url/metrics" | python3 -c '
 import sys
@@ -62,7 +66,8 @@ text=sys.stdin.read()
 required=["container_restarts_total", "container_start_time_seconds", "container_running",
           "container_last_exit_code", "container_memory_max_usage_bytes", "container_memory_failures_total",
           "container_processes", "container_file_descriptors", "container_tasks_state",
-          "container_network_tcp_usage_total", "container_fs_limit_bytes", "container_fs_usage_bytes",
+          "container_network_tcp_usage_total", "container_network_advance_tcp_stats_total",
+          "container_fs_limit_bytes", "container_fs_usage_bytes",
           "container_spec_cpu_shares", "docker_engine_info"]
 for name in required:
     assert any(line.startswith(name+"{") for line in text.splitlines()),name

@@ -43,7 +43,7 @@ pub struct Config {
     /// Disable process, thread, file descriptor and scheduler statistics.
     #[arg(long, env = "CADVISOR_RS_DISABLE_PROCESS_METRICS")]
     pub disable_process_metrics: bool,
-    /// Disable TCP/UDP connection table statistics.
+    /// Disable TCP/UDP connection tables and advanced TCP statistics.
     #[arg(long, env = "CADVISOR_RS_DISABLE_NETWORK_CONNECTIONS")]
     pub disable_network_connections: bool,
     /// Disable statvfs capacity reads through container roots/mounts.

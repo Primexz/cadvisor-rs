@@ -6,6 +6,10 @@ use std::collections::BTreeMap;
 /// Extended memory-controller gauges and counters. Every value is optional.
 #[derive(Clone, Debug, Default, Serialize)]
 pub struct MemoryDetails {
+    /// Memory-controller NUMA residency in base pages, separated by hierarchy scope.
+    pub numa: NumaStats,
+    /// Whether the v1 cpuset migrates memory when its allowed nodes change.
+    pub migrate: Option<bool>,
     /// Peak charged bytes since cgroup creation or kernel peak reset.
     pub peak: Option<u64>,
     /// File-backed mapped bytes.
@@ -54,6 +58,39 @@ pub struct MemoryDetails {
     pub swap_limit: Option<u64>,
     /// Memory high throttle threshold in bytes, when finite.
     pub high: Option<u64>,
+}
+
+/// Anonymous, file-backed and unevictable base pages on one NUMA node.
+#[derive(Clone, Debug, Default, Serialize)]
+pub struct NumaNode {
+    /// Anonymous pages.
+    pub anon: Option<u64>,
+    /// File-backed pages.
+    pub file: Option<u64>,
+    /// Unevictable pages; these can overlap anonymous or file-backed pages.
+    pub unevictable: Option<u64>,
+}
+
+/// NUMA measurements with explicit local and descendant-inclusive accounting.
+#[derive(Clone, Debug, Default, Serialize)]
+pub struct NumaStats {
+    /// Local v1 memory-controller statistics.
+    pub container: BTreeMap<u32, NumaNode>,
+    /// Descendant-inclusive v1 or unified v2 statistics.
+    pub hierarchy: BTreeMap<u32, NumaNode>,
+}
+
+/// HugeTLB fault accounting for one hugepage size, independently of reservations.
+#[derive(Clone, Debug, Default, Serialize)]
+pub struct HugeTlb {
+    /// Current charged bytes.
+    pub usage: Option<u64>,
+    /// Kernel-recorded peak bytes, where the v1 controller exposes them.
+    pub peak: Option<u64>,
+    /// Finite hugepage limit in bytes.
+    pub limit: Option<u64>,
+    /// Cumulative allocation failures due to the HugeTLB limit.
+    pub failures: Option<u64>,
 }
 
 /// One PSI row: averages are percentages, total is cumulative seconds.
@@ -124,6 +161,8 @@ pub struct Processes {
 /// TCP connection-state and UDP queue observations from one network namespace.
 #[derive(Clone, Debug, Default, Serialize)]
 pub struct Connections {
+    /// Namespace TCP SNMP and TcpExt measurements, including retransmits and drops.
+    pub advanced: AdvancedTcp,
     /// TCP IPv4 counts in Linux state-code order (1..=11).
     pub tcp: Option<[u64; 11]>,
     /// TCP IPv6 counts.
@@ -134,6 +173,15 @@ pub struct Connections {
     pub udp6: Option<[u64; 4]>,
     /// Connection table collection errors.
     pub errors: u64,
+}
+
+/// A bounded set of named Linux TCP measurements; absent fields remain absent.
+#[derive(Clone, Debug, Default, Serialize)]
+pub struct AdvancedTcp {
+    /// Known SNMP/TcpExt fields using cAdvisor's stable lowercase labels.
+    pub values: BTreeMap<&'static str, u64>,
+    /// Maximum connections; Linux reports -1 for a dynamic limit.
+    pub max_connections: Option<i64>,
 }
 
 /// Filesystem capacity; capacity is shared with other containers using that filesystem.

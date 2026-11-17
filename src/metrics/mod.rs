@@ -1,5 +1,6 @@
 //! cAdvisor-compatible Prometheus text exposition, encoded once per collection.
 
+mod controllers;
 mod docker;
 mod engine;
 mod extended;
@@ -164,6 +165,7 @@ pub fn encode(collection: &Collection, labels: &Labels) -> Bytes {
     }
     extended::encode(&mut out, collection, labels);
     resources::encode(&mut out, collection, labels);
+    controllers::encode(&mut out, collection, labels);
     docker::encode(&mut out, collection, labels);
     engine::encode(&mut out, collection);
     encode_devices(&mut out, collection, labels);

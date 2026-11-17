@@ -1,10 +1,10 @@
 //! Split cgroup v1 controller files, including co-mounted CPU controllers.
 
-use std::{collections::BTreeMap, path::Path};
+use std::path::Path;
 
-use crate::model::{Container, Cpu, Io, Memory};
+use crate::model::{Container, Cpu, Memory};
 
-use super::{Group, Reader, controller, cpuset_count, key_values, limit, parse::valid_device};
+use super::{Group, Reader, Version, controller, cpuset_count, key_values, limit};
 
 pub(super) fn read(root: &Path, group: &Group, reader: &mut Reader) -> Container {
     let relative = group.id.trim_start_matches('/');
@@ -73,6 +73,16 @@ pub(super) fn read(root: &Path, group: &Group, reader: &mut Reader) -> Container
     details.swap_limit = reader
         .text(&memory_path.join("memory.memsw.limit_in_bytes"))
         .and_then(|v| limit(&v));
+    details.numa = super::numa::read(&memory_path, Version::V1, reader);
+    details.migrate = reader
+        .number(
+            &root
+                .join("cpuset")
+                .join(relative)
+                .join("cpuset.memory_migrate"),
+        )
+        .filter(|value| *value <= 1)
+        .map(|value| value == 1);
     let swap = get("total_swap", "swap").or_else(|| {
         reader
             .number(&memory_path.join("memory.memsw.usage_in_bytes"))
@@ -94,50 +104,16 @@ pub(super) fn read(root: &Path, group: &Group, reader: &mut Reader) -> Container
         oom_kills: None,
         details,
     };
-    let bytes = reader
-        .text(&blkio.join("blkio.throttle.io_service_bytes"))
-        .or_else(|| reader.text(&blkio.join("blkio.io_service_bytes_recursive")))
-        .unwrap_or_default();
-    let operations = reader
-        .text(&blkio.join("blkio.throttle.io_serviced"))
-        .or_else(|| reader.text(&blkio.join("blkio.io_serviced_recursive")))
-        .unwrap_or_default();
-    let mut io = BTreeMap::new();
-    parse_io(&bytes, false, &mut io);
-    parse_io(&operations, true, &mut io);
     Container {
         cpu,
         memory,
+        hugetlb: super::hugetlb::read(&root.join("hugetlb").join(relative), Version::V1, reader),
         pids: reader.number(&pids.join("pids.current")),
         pids_limit: reader.text(&pids.join("pids.max")).and_then(|v| limit(&v)),
         pids_events_max: reader
             .text(&pids.join("pids.events"))
             .and_then(|v| key_values(&v).get("max").copied()),
-        io,
+        io: super::blkio::read(&blkio, reader),
         ..Container::default()
-    }
-}
-
-fn parse_io(text: &str, operations: bool, io: &mut BTreeMap<String, Io>) {
-    for line in text.lines() {
-        let mut fields = line.split_whitespace();
-        let (Some(device), Some(kind), Some(value)) = (fields.next(), fields.next(), fields.next())
-        else {
-            continue;
-        };
-        if !valid_device(device) {
-            continue;
-        }
-        let Ok(value) = value.parse() else {
-            continue;
-        };
-        let entry = io.entry(device.to_owned()).or_default();
-        match (operations, kind) {
-            (false, "Read") => entry.read_bytes = Some(value),
-            (false, "Write") => entry.write_bytes = Some(value),
-            (true, "Read") => entry.reads = Some(value),
-            (true, "Write") => entry.writes = Some(value),
-            _ => {}
-        }
     }
 }

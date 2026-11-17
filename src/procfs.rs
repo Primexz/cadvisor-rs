@@ -7,9 +7,11 @@ use crate::model::{Machine, Network};
 mod connections;
 mod filesystem;
 mod process;
+mod tcp_stats;
 pub use connections::{parse_tcp, parse_udp, read_connections};
 pub use filesystem::read_filesystems;
 pub use process::{parse_ulimits, read_processes};
+pub use tcp_stats::parse_advanced_tcp;
 
 /// Read distinct PIDs across a cgroup subtree without unbounded process walks.
 ///

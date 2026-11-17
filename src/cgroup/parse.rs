@@ -62,11 +62,12 @@ pub fn parse_io_v2(text: &str) -> BTreeMap<String, Io> {
                 return None;
             }
             let mut io = Io::default();
+            let mut available = false;
             for field in fields {
                 let Some((key, value)) = field.split_once('=') else {
                     continue;
                 };
-                let Ok(value) = value.parse() else {
+                let Ok(value) = value.parse::<u64>() else {
                     continue;
                 };
                 match key {
@@ -76,10 +77,15 @@ pub fn parse_io_v2(text: &str) -> BTreeMap<String, Io> {
                     "wios" => io.writes = Some(value),
                     "dbytes" => io.discard_bytes = Some(value),
                     "dios" => io.discards = Some(value),
-                    _ => {}
+                    "cost.usage" => io.cost_usage_seconds = Some(value as f64 / 1e6),
+                    "cost.wait" => io.cost_wait_seconds = Some(value as f64 / 1e6),
+                    "cost.indebt" => io.cost_indebt_seconds = Some(value as f64 / 1e6),
+                    "cost.indelay" => io.cost_indelay_seconds = Some(value as f64 / 1e6),
+                    _ => continue,
                 }
+                available = true;
             }
-            Some((device.to_owned(), io))
+            available.then(|| (device.to_owned(), io))
         })
         .collect()
 }

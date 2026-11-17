@@ -221,6 +221,34 @@ fn process(out: &mut String, collection: &Collection, labels: &Labels) {
 }
 
 fn connections(out: &mut String, collection: &Collection, labels: &Labels) {
+    family(
+        out,
+        "container_network_advance_tcp_stats_total",
+        "Raw namespace TCP and TcpExt statistics (gauges, despite the legacy name).",
+        "gauge",
+    );
+    for container in &collection.containers {
+        for (state, value) in &container.connections.advanced.values {
+            sample(
+                out,
+                "container_network_advance_tcp_stats_total",
+                container,
+                labels,
+                &[("tcp_state", state)],
+                value,
+            );
+        }
+        if let Some(value) = container.connections.advanced.max_connections {
+            sample(
+                out,
+                "container_network_advance_tcp_stats_total",
+                container,
+                labels,
+                &[("tcp_state", "maxconn")],
+                value,
+            );
+        }
+    }
     for (name, v6) in [
         ("container_network_tcp_usage_total", false),
         ("container_network_tcp6_usage_total", true),

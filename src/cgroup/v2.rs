@@ -4,7 +4,7 @@ use std::path::Path;
 
 use crate::model::{Container, Cpu, Memory, PressureSet};
 
-use super::{Reader, cpuset_count, key_values, limit, parse_io_v2, parse_pressure};
+use super::{Reader, Version, cpuset_count, key_values, limit, parse_io_v2, parse_pressure};
 
 pub(super) fn read(path: &Path, reader: &mut Reader) -> Container {
     let cpu_text = reader.text(&path.join("cpu.stat")).unwrap_or_default();
@@ -68,6 +68,7 @@ pub(super) fn read(path: &Path, reader: &mut Reader) -> Container {
     details.events_max = events.get("max").copied();
     details.events_oom = events.get("oom").copied();
     details.events_oom_group = events.get("oom_group_kill").copied();
+    details.numa = super::numa::read(path, Version::V2, reader);
     if let Some(local) = reader.text(&path.join("memory.stat.local")) {
         let local = key_values(&local);
         details.faults = [
@@ -91,6 +92,7 @@ pub(super) fn read(path: &Path, reader: &mut Reader) -> Container {
     Container {
         cpu,
         memory,
+        hugetlb: super::hugetlb::read(path, Version::V2, reader),
         pids: reader.number(&path.join("pids.current")),
         pids_limit: reader.text(&path.join("pids.max")).and_then(|v| limit(&v)),
         pids_events_max: reader
